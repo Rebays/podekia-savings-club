@@ -1,9 +1,11 @@
-// middleware.ts
-import { createServerClient } from "@supabase/ssr"
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+// middleware.ts   (or src/middleware.ts)
+
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Create a response object we can modify
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -20,30 +22,33 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
+            // Update the incoming request cookies
             request.cookies.set(name, value)
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            })
+            // Update the outgoing response cookies
             response.cookies.set(name, value, options)
+          })
+          // Important: recreate response after cookie changes
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
           })
         },
       },
     }
   )
 
-  // This is the key line: refreshes the session if needed
+  // This refreshes the session (very important!)
   await supabase.auth.getSession()
 
-  // Example: protect dashboard routes
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+  // Protect dashboard routes (customize as needed)
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const {
       data: { session },
     } = await supabase.auth.getSession()
 
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      return NextResponse.redirect(new URL('/login', request.url))
     }
   }
 
@@ -53,8 +58,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except static files, images, api routes, login, etc.
+     * Match all paths except static files, images, api routes, login, etc.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api|login|signup).*)",
+    '/((?!_next/static|_next/image|favicon.ico|api|login|signup).*)',
   ],
 }
