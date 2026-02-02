@@ -10,10 +10,9 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // Fetch contributions for this user
-  // Adjust table/column names to match your actual schema
+  // Fetch contributions – adjust table/column names to match your schema
   const { data: contributions, error } = await supabase
-    .from('contributions')
+    .from('Contributions')
     .select(`
       fortnight,
       date,
@@ -23,7 +22,7 @@ export default async function DashboardPage() {
       absent_fee,
       notes
     `)
-    .eq('member_id', user.id)           // ← assuming member_id = auth.uid()
+    .eq('member_id', user.id)           // assuming member_id = auth.uid()
     .order('fortnight', { ascending: true })
 
   if (error) {
@@ -35,7 +34,7 @@ export default async function DashboardPage() {
     )
   }
 
-  // Calculate totals (client-side like Excel)
+  // Calculate totals
   const totals = contributions?.reduce(
     (acc, row) => ({
       shares: acc.shares + (row.shares || 0),
