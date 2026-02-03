@@ -1,3 +1,4 @@
+// app/ledger/page.tsx
 import { createSupabaseServerClient } from '@/lib/supabse/server'
 import { redirect } from 'next/navigation'
 
@@ -14,112 +15,96 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { AppSidebar } from '@/components/app-sidebar'
 
-export default async function DashboardPage() {
+export default async function LedgerPage() {
   const supabase = await createSupabaseServerClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  if (!user) {
+    redirect('/login')
+  }
 
-  // Fetch contributions
+  // Fetch all contributions for this user
   const { data: contributions, error } = await supabase
-    .from('contributions')
+    .from('Contributions')
     .select('fortnight, date, shares, social_fund, late_fee, absent_fee, notes')
     .eq('member_id', user.id)
     .order('fortnight', { ascending: true })
 
-  console.log('User ID:', user.id)
-  console.log('Contributions:', contributions)
-  console.log('Fetch error:', error)
-
   if (error) {
-    console.error('Error fetching contributions:', error)
+    console.error('Error fetching ledger:', error)
     return (
-      <div className="p-8 text-red-400">
-        Error loading your contributions: {error.message}
+      <div className="min-h-screen bg-background p-8 text-red-400">
+        Error loading ledger data
       </div>
     )
   }
 
-  // Calculate totals
-  const totals = contributions?.reduce(
-    (acc, r) => ({
-      shares: acc.shares + (r.shares ?? 0),
-      social: acc.social + (r.social_fund ?? 0),
-      late: acc.late + (r.late_fee ?? 0),
-      absent: acc.absent + (r.absent_fee ?? 0),
-    }),
-    { shares: 0, social: 0, late: 0, absent: 0 }
-  ) ?? { shares: 0, social: 0, late: 0, absent: 0 }
+  // Calculate row totals + running cumulative
+  let cumulative = 0
+  const ledgerRows = contributions?.map((row) => {
+    const rowTotal =
+      (row.shares ?? 0) +
+      (row.social_fund ?? 0) +
+      (row.late_fee ?? 0) +
+      (row.absent_fee ?? 0)
 
-  const grandTotal = totals.shares + totals.social + totals.late + totals.absent
+    cumulative += rowTotal
+
+    return {
+      ...row,
+      rowTotal,
+      cumulative,
+    }
+  }) ?? []
+
+  const grandTotal = cumulative
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Sidebar */}
       <AppSidebar />
 
+      {/* Main content - offset for sidebar on desktop */}
       <div className="lg:pl-72">
         <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                Dashboard
+                Personal Ledger
               </h1>
               <p className="text-muted-foreground mt-1">
-                {user.email}
+                Detailed contribution history • {user.email}
               </p>
             </div>
             <Badge variant="outline" className="px-4 py-1 text-sm">
-              Member
+              Member View
             </Badge>
           </div>
 
           <Separator className="my-6" />
 
-          {/* Balance Overview Card */}
+          {/* Grand Total Hero Card */}
           <Card className="bg-gradient-to-br from-card to-muted/40 border-border/50 shadow-2xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl text-muted-foreground">
-                Your Total Balance
+                Lifetime Total Balance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="text-center md:text-left">
-                  <p className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter">
-                    {grandTotal.toLocaleString()}
-                  </p>
-                  <p className="text-lg text-muted-foreground mt-1">
-                    SBD equivalent
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Shares</p>
-                    <p className="text-2xl font-bold text-white">{totals.shares}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Social Fund</p>
-                    <p className="text-2xl font-bold text-emerald-400">{totals.social}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Late Fees</p>
-                    <p className="text-2xl font-bold text-red-400">{totals.late}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Absent Fees</p>
-                    <p className="text-2xl font-bold text-red-400">{totals.absent}</p>
-                  </div>
-                </div>
-              </div>
+              <p className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-center md:text-left">
+                {grandTotal.toLocaleString()}
+              </p>
+              <p className="text-lg text-muted-foreground mt-2 text-center md:text-left">
+                SBD equivalent • All fortnights combined
+              </p>
             </CardContent>
           </Card>
 
-          {/* Recent Contributions Table */}
-          <Card className="border-border/50 shadow-lg">
+          {/* Detailed Ledger Table */}
+          <Card className="border-border/50 shadow-lg overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-xl">Recent Contributions</CardTitle>
+              <CardTitle className="text-xl">Fortnight-by-Fortnight Ledger</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -129,14 +114,16 @@ export default async function DashboardPage() {
                       <TableHead className="w-16">FN</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead className="text-right">Shares</TableHead>
-                      <TableHead className="text-right">Social</TableHead>
-                      <TableHead className="text-right">Late</TableHead>
-                      <TableHead className="text-right">Absent</TableHead>
+                      <TableHead className="text-right">Social Fund</TableHead>
+                      <TableHead className="text-right">Late Fee</TableHead>
+                      <TableHead className="text-right">Absent Fee</TableHead>
+                      <TableHead className="text-right font-semibold">Row Total</TableHead>
+                      <TableHead className="text-right font-bold">Cumulative</TableHead>
                       <TableHead>Notes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {contributions?.map((row) => (
+                    {ledgerRows.map((row) => (
                       <TableRow key={row.fortnight} className="hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium">{row.fortnight}</TableCell>
                         <TableCell className="text-muted-foreground">
@@ -152,16 +139,25 @@ export default async function DashboardPage() {
                         <TableCell className="text-right text-red-400">
                           {row.absent_fee || 0}
                         </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {row.rowTotal}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-cyan-300">
+                          {row.cumulative}
+                        </TableCell>
                         <TableCell className="text-muted-foreground max-w-xs truncate">
                           {row.notes || '—'}
                         </TableCell>
                       </TableRow>
                     ))}
 
-                    {(!contributions || contributions.length === 0) && (
+                    {ledgerRows.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                          No contributions recorded yet
+                        <TableCell colSpan={9} className="h-48 text-center text-muted-foreground">
+                          No contributions recorded yet.<br />
+                          <span className="text-sm mt-2 block">
+                            Your transaction history will appear here once entries are added.
+                          </span>
                         </TableCell>
                       </TableRow>
                     )}
@@ -171,8 +167,9 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <div className="text-center text-sm text-muted-foreground py-6">
-            Last updated: {new Date().toLocaleString()}
+          {/* Footer */}
+          <div className="text-center text-sm text-muted-foreground py-8">
+            Ledger • Last updated: {new Date().toLocaleString()}
           </div>
         </div>
       </div>

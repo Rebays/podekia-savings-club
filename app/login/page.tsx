@@ -1,8 +1,16 @@
+// app/login/page.tsx
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabaseBrowser } from '@/lib/supabse/client'   // ← your browser client
+import { supabaseBrowser } from '@/lib/supabse/client'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -27,76 +35,85 @@ export default function LoginPage() {
       return
     }
 
-    // success → go to dashboard
     router.push('/dashboard')
-    router.refresh() // helps refresh server components if needed
+    router.refresh()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-100">
-        <h1 className="text-2xl font-bold text-center mb-8 text-gray-800">
-          Savings Club Login
-        </h1>
-
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value.trim())}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-              placeholder="you@example.com"
-              required
-              autoComplete="email"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-gradient-to-br from-card to-muted/40 border-border/50 shadow-2xl backdrop-blur-sm">
+        <CardHeader className="space-y-1 pb-6">
+          <div className="flex items-center justify-center mb-2">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+              SC
             </div>
-          )}
+          </div>
+          <CardTitle className="text-2xl font-bold text-center tracking-tight">
+            Savings Club
+          </CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Sign in to view your contributions
+          </CardDescription>
+        </CardHeader>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`
-              w-full py-3 px-4 rounded-lg font-medium text-white transition
-              ${loading
-                ? 'bg-blue-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-              }
-            `}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                required
+                autoComplete="email"
+                className="bg-muted/50 border-border/70 focus:ring-cyan-500/30"
+              />
+            </div>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Contact the club admin if you need an account.
-        </p>
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="bg-muted/50 border-border/70 focus:ring-cyan-500/30"
+              />
+            </div>
+
+            {error && (
+              <Alert variant="destructive" className="bg-red-950/40 border-red-800/60 text-red-200">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className={`
+                w-full font-medium transition-all
+                ${loading
+                  ? 'bg-cyan-600/50 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500'
+                }
+              `}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            <p>Contact the club admin if you need an account.</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
