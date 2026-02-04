@@ -14,23 +14,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, LogOut, LayoutDashboard, BookOpen, User, Settings } from "lucide-react"
+import { Menu, LogOut, LayoutDashboard, BookOpen, User, Settings, Group } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { signOut, supabaseBrowser } from "@/lib/supabse/client" // your browser client
-import { title } from "process"
+import Image from "next/image"
 
 const navItems = [
   {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
     title: "Overview",
     href: "/dashboard/admin",
-    icon: Settings,
+    icon: LayoutDashboard,
     adminOnly: true,
   },
+  {
+    title: "My savings",
+    href: "/dashboard",
+    icon: User,
+  },
+  
   {
     title: "Contributions",
     href: "/admin/contributions-overview",
@@ -40,7 +41,7 @@ const navItems = [
   {
     title: "Members",
     href: "/admin/members",
-    icon: Settings,
+    icon: Group,
     adminOnly: true,
   }
   // Add more items later (e.g. Profile, Settings)
@@ -66,9 +67,13 @@ export function AppSidebar() {
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white font-bold">
-            SC
-          </div>
+          <Image
+            src="/podekia-logo.png"
+            alt="Podekia Savings Club Logo"
+            width={60}
+            height={60}
+          />
+          
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Podekia Club</h2>
             <p className="text-xs text-muted-foreground">Member Portal</p>
@@ -103,12 +108,12 @@ export function AppSidebar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start px-3 py-6 h-auto">
               <Avatar className="h-9 w-9 mr-3">
-                <AvatarFallback className="bg-gradient-to-br from-cyan-500/20 to-purple-600/20 text-cyan-400">
+                <AvatarFallback className="bg-linear-to-br from-cyan-500/20 to-purple-600/20 text-cyan-400">
                   {user?.email?.[0]?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start text-left">
-                <span className="font-medium text-sm truncate max-w-[140px]">
+                <span className="font-medium text-sm truncate max-w-35">
                   {user?.email?.split("@")[0]}
                 </span>
                 <span className="text-xs text-muted-foreground">Member</span>
@@ -116,8 +121,8 @@ export function AppSidebar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            {/* <DropdownMenuLabel>My Account</DropdownMenuLabel> */}
+            {/* <DropdownMenuSeparator /> */}
             <DropdownMenuItem onClick={handleSignOut} className="text-red-400 focus:text-red-400">
               <LogOut className="mr-2 h-4 w-4" />
               Sign out

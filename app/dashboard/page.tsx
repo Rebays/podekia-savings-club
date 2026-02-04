@@ -87,7 +87,7 @@ export default async function DashboardPage() {
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="text-center md:text-left">
                   <p className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter">
-                    {grandTotal.toLocaleString()}
+                    ${grandTotal.toLocaleString()}
                   </p>
                   <p className="text-lg text-muted-foreground mt-1">
                     SBD equivalent
@@ -97,19 +97,19 @@ export default async function DashboardPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
                   <div>
                     <p className="text-sm text-muted-foreground">Shares</p>
-                    <p className="text-2xl font-bold text-white">{totals.shares}</p>
+                    <p className="text-2xl font-bold text-black">${totals.shares}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Social Fund</p>
-                    <p className="text-2xl font-bold text-emerald-400">{totals.social}</p>
+                    <p className="text-2xl font-bold text-emerald-400">${totals.social}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Late Fees</p>
-                    <p className="text-2xl font-bold text-red-400">{totals.late}</p>
+                    <p className="text-2xl font-bold text-red-400">${totals.late}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Absent Fees</p>
-                    <p className="text-2xl font-bold text-red-400">{totals.absent}</p>
+                    <p className="text-2xl font-bold text-red-400">${totals.absent}</p>
                   </div>
                 </div>
               </div>
