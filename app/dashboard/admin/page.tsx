@@ -118,7 +118,9 @@ export default async function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-blue-400">
-                  $ {memberCount > 0 ? (grandTotal / memberCount).toFixed(0) : 0}
+                 {memberCount && memberCount > 0 
+        ? Number(grandTotal / memberCount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+        : '—'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Average total contribution</p>
               </CardContent>

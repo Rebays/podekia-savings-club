@@ -31,14 +31,14 @@ export default async function AdminContributionsOverview() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-background p-8 text-center">
-        <h1 className="text-3xl font-bold text-red-500">Access Denied</h1>
-        <p className="mt-4 text-muted-foreground">Only administrators can access this page.</p>
-      </div>
-    )
-  }
+  // if (profile?.role !== 'admin') {
+  //   return (
+  //     <div className="min-h-screen bg-background p-8 text-center">
+  //       <h1 className="text-3xl font-bold text-red-500">Access Denied</h1>
+  //       <p className="mt-4 text-muted-foreground">Only administrators can access this page.</p>
+  //     </div>
+  //   )
+  // }
 
   // Fetch all profiles
   const { data: profiles } = await supabase
@@ -103,7 +103,7 @@ export default async function AdminContributionsOverview() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                All Members Contributions Overview
+                Contributions Overview
               </h1>
               <p className="text-muted-foreground mt-1">
                 {members.length} members • Club grand total: {grandTotals.total.toLocaleString()}
