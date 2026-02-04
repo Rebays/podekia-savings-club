@@ -125,7 +125,7 @@ export default async function MemberDetailPage({
   async function deleteContribution(id: string) {
     'use server'
 
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient(true)
 
     const { error } = await supabase
       .from('contributions')

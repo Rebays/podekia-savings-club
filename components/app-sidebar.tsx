@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, LogOut, LayoutDashboard, BookOpen, User, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { signOut, supabaseBrowser } from "@/lib/supabse/client" // your browser client
+import { title } from "process"
 
 const navItems = [
   {
@@ -25,11 +26,23 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-  title: "Members",
-  href: "/admin/members",
-  icon: Settings,
-  adminOnly: true,
-}
+    title: "Overview",
+    href: "/dashboard/admin",
+    icon: Settings,
+    adminOnly: true,
+  },
+  {
+    title: "Contributions",
+    href: "/admin/contributions-overview",
+    icon: BookOpen,
+    adminOnly: true,
+  },
+  {
+    title: "Members",
+    href: "/admin/members",
+    icon: Settings,
+    adminOnly: true,
+  }
   // Add more items later (e.g. Profile, Settings)
 ]
 
@@ -38,7 +51,7 @@ export function AppSidebar() {
   const [open, setOpen] = useState(false)
   const [user, setUser] = useState<any>(null);
 
- useEffect(() => {
+  useEffect(() => {
     supabaseBrowser.auth.getUser().then(({ data }) => {
       setUser(data.user)
     })
