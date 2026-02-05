@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { AppSidebar } from '@/components/app-sidebar'
+import { ContributionsTable } from '@/components/ContributionsTable'
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient()
@@ -122,52 +123,9 @@ export default async function DashboardPage() {
               <CardTitle className="text-xl">Recent Contributions</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead className="w-16">FN</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Shares</TableHead>
-                      <TableHead className="text-right">Social</TableHead>
-                      <TableHead className="text-right">Late</TableHead>
-                      <TableHead className="text-right">Absent</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contributions?.map((row) => (
-                      <TableRow key={row.fortnight} className="hover:bg-muted/50 transition-colors">
-                        <TableCell className="font-medium">{row.fortnight}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {row.date || '—'}
-                        </TableCell>
-                        <TableCell className="text-right">{row.shares || 0}</TableCell>
-                        <TableCell className="text-right text-emerald-400">
-                          {row.social_fund || 0}
-                        </TableCell>
-                        <TableCell className="text-right text-red-400">
-                          {row.late_fee || 0}
-                        </TableCell>
-                        <TableCell className="text-right text-red-400">
-                          {row.absent_fee || 0}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground max-w-xs truncate">
-                          {row.notes || '—'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-
-                    {(!contributions || contributions.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                          No contributions recorded yet
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <CardContent className="p-0">
+                <ContributionsTable contributions={contributions} />
+              </CardContent>
             </CardContent>
           </Card>
 

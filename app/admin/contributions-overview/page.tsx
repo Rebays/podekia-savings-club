@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Eye } from 'lucide-react'
 import { AppSidebar } from '@/components/app-sidebar'
+import { ContributionsOverviewTable } from '@/components/ContributionsOverviewTable'
 
 export default async function AdminContributionsOverview() {
   const supabase = await createSupabaseServerClient(true) // true = service_role key
@@ -117,73 +118,7 @@ export default async function AdminContributionsOverview() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="text-right">Shares</TableHead>
-                      <TableHead className="text-right">Social Fund</TableHead>
-                      <TableHead className="text-right">Late Fee</TableHead>
-                      <TableHead className="text-right">Absent Fee</TableHead>
-                      <TableHead className="text-right font-semibold">Row Total</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {members.map((m) => (
-                      <TableRow key={m.id} className="hover:bg-muted/50 transition-colors">
-                        <TableCell className="font-medium">{m.full_name || '—'}</TableCell>
-                        <TableCell className="text-right">{m.shares.toLocaleString()}</TableCell>
-                        <TableCell className="text-right text-emerald-400">
-                          {m.social_fund.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right text-red-400">
-                          {m.late_fee.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right text-red-400">
-                          {m.absent_fee.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {m.total.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href={`/admin/members/${m.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-
-                    {members.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                          No members yet
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                  <TableFooter className="bg-muted/50">
-                    <TableRow>
-                      <TableCell className="font-bold">Grand Total</TableCell>
-                      <TableCell className="text-right font-bold">{grandTotals.shares.toLocaleString()}</TableCell>
-                      <TableCell className="text-right font-bold text-emerald-400">
-                        {grandTotals.social_fund.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-red-400">
-                        {grandTotals.late_fee.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-red-400">
-                        {grandTotals.absent_fee.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-cyan-300">
-                        {grandTotals.total.toLocaleString()}
-                      </TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                <ContributionsOverviewTable members={members} grandTotals={grandTotals} />
               </div>
             </CardContent>
           </Card>

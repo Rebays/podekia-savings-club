@@ -19,12 +19,15 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { AppSidebar } from '@/components/app-sidebar'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { MemberContributionsClient } from './MemberContributionsClient'
 
 export default async function MemberDetailPage({
   params,
 }: {
   params: Promise<{ memberId: string }>
 }) {
+
   const supabase = await createSupabaseServerClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -161,147 +164,17 @@ export default async function MemberDetailPage({
 
           <Separator className="my-6" />
 
-          {/* Summary */}
-          <Card className="bg-linear-to-br from-card to-muted/40 border-border/50 shadow-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl text-muted-foreground">
-                Total Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-6xl font-bold text-center md:text-left">
-                {grandTotal.toLocaleString()}
-              </p>
-              <p className="text-lg text-muted-foreground mt-2 text-center md:text-left">
-                SBD equivalent • All fortnights
-              </p>
-            </CardContent>
-          </Card>
 
-          {/* Add New Contribution Form */}
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-xl">Add New Contribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form action={addContribution} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <input type="hidden" name="memberId" value={memberId} />
 
-                <div className="space-y-2">
-                  <Label htmlFor="fortnight">Fortnight (1-23)</Label>
-                  <Input name="fortnight" type="number" min="1" max="23" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input name="date" type="date" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="shares">Shares</Label>
-                  <Input name="shares" type="number" min="0" step="0.01" defaultValue="0" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="social_fund">Social Fund</Label>
-                  <Input name="social_fund" type="number" min="0" step="0.01" defaultValue="0" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="late_fee">Late Fee</Label>
-                  <Input name="late_fee" type="number" min="0" step="0.01" defaultValue="0" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="absent_fee">Absent Fee</Label>
-                  <Input name="absent_fee" type="number" min="0" step="0.01" defaultValue="0" required />
-                </div>
-
-                <div className="md:col-span-3 space-y-2">
-                  <Label htmlFor="notes">Notes (optional)</Label>
-                  <Input name="notes" />
-                </div>
-
-                <div className="md:col-span-3 flex justify-end">
-                  <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Contribution
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
 
           {/* Contributions Table */}
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl">Contribution History</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead className="w-16">FN</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Shares</TableHead>
-                      <TableHead className="text-right">Social</TableHead>
-                      <TableHead className="text-right">Late</TableHead>
-                      <TableHead className="text-right">Absent</TableHead>
-                      <TableHead className="text-right">Row Total</TableHead>
-                      <TableHead className="text-right">Cumulative</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contributions?.map((row) => {
-                      const rowTotal =
-                        (row.shares ?? 0) +
-                        (row.social_fund ?? 0) +
-                        (row.late_fee ?? 0) +
-                        (row.absent_fee ?? 0)
-
-                      return (
-                        <TableRow key={row.id} className="hover:bg-muted/50 transition-colors">
-                          <TableCell className="font-medium">{row.fortnight}</TableCell>
-                          <TableCell>{row.date || '—'}</TableCell>
-                          <TableCell className="text-right">{row.shares || 0}</TableCell>
-                          <TableCell className="text-right text-emerald-400">{row.social_fund || 0}</TableCell>
-                          <TableCell className="text-right text-red-400">{row.late_fee || 0}</TableCell>
-                          <TableCell className="text-right text-red-400">{row.absent_fee || 0}</TableCell>
-                          <TableCell className="text-right font-medium">{rowTotal}</TableCell>
-                          <TableCell className="text-right font-bold text-cyan-300">
-                            {/* You'd need cumulative logic here if desired */}
-                            {rowTotal}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground max-w-xs truncate">{row.notes || '—'}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <form action={deleteContribution.bind(null, row.id)} className="inline">
-                              <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </form>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-
-                    {(!contributions || contributions.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                          No contributions yet for this member
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <MemberContributionsClient
+            memberId={memberId}
+            contributions={contributions}
+            grandTotal={grandTotal}
+            addContribution={addContribution}
+            deleteContribution={deleteContribution}
+          />
         </div>
       </div>
     </div>
