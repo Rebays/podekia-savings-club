@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabse/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,17 +17,17 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const searchParams = useSearchParams()
 
-  // Check if we have a valid recovery token in URL
+  // Check if we have a valid recovery token in URL (client-side)
   useEffect(() => {
-    const type = searchParams.get("type")
-    const token = searchParams.get("token")
+    const params = new URLSearchParams(window.location.search)
+    const type = params.get("type")
+    const token = params.get("token")
 
     if (type !== "recovery" || !token) {
       setError("Invalid or expired reset link. Please request a new one.")
     }
-  }, [searchParams])
+  }, [])
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()

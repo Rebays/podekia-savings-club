@@ -147,7 +147,7 @@ export default async function MemberDetailPage({
 
     const { data: latest } = await supabase
       .from('contributions')
-      .select('id, outstanding_fee')
+      .select('id, outstanding_fee, notes')
       .eq('member_id', memberId)
       .order('fortnight', { ascending: false })
       .limit(1)
