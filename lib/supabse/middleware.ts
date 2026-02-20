@@ -38,18 +38,35 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // This refreshes the session (very important!)
-  await supabase.auth.getSession()
+  // Refresh the session (very important!)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  // Protect dashboard routes (customize as needed)
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+  const pathname = request.nextUrl.pathname
 
+  // Root path: redirect based on auth status
+  if (pathname === '/') {
+    if (session) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Protected routes: redirect to login if not authenticated
+  if (
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/ledger') ||
+    pathname.startsWith('/admin')
+  ) {
     if (!session) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
+  }
+
+  // If logged in and visiting /login, redirect to dashboard
+  if (pathname === '/login' && session) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return response
@@ -60,6 +77,6 @@ export const config = {
     /*
      * Match all paths except static files, images, api routes, login, etc.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api|login|signup).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api|signup).*)',
   ],
 }
