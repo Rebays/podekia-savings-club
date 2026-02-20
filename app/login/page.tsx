@@ -106,7 +106,7 @@ export default function LoginPage() {
                 w-full font-medium transition-all
                 ${loading
                   ? 'bg-cyan-600/50 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500'
+                  : 'bg-linear-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500'
                 }
               `}
             >
