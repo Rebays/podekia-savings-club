@@ -19,6 +19,8 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Trash2, Edit, Plus } from 'lucide-react'
 import { AppSidebar } from '@/components/app-sidebar'
+import { MemberContributionsClient } from './MemberContributionsClient'
+import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 
 export default async function MemberDetailPage({
   params,
@@ -41,19 +43,12 @@ export default async function MemberDetailPage({
     return <div className="p-8 text-red-500 text-center">Access Denied</div>
   }
 
-  // Await params (Next.js 15 requirement)
   const { memberId } = await params
 
   // Fetch member info
   const { data: member } = await supabase
     .from('profiles')
-    .select(`
-      id,
-      full_name,
-      role,
-      address,
-      created_at
-    `)
+    .select('id, full_name, role, address, created_at')
     .eq('id', memberId)
     .single()
 
@@ -61,13 +56,13 @@ export default async function MemberDetailPage({
     return <div className="p-8 text-center">Member not found</div>
   }
 
-  // Fetch email separately from auth.users (admin API)
+  // Fetch email
   const { data: authUser } = await supabase.auth.admin.getUserById(memberId)
 
   // Fetch contributions
   const { data: contributions, error } = await supabase
     .from('contributions')
-    .select('id, fortnight, date, shares, social_fund, late_fee, absent_fee, notes')
+    .select('id, fortnight, date, shares, social_fund, late_fee, absent_fee, notes, outstanding_fee')
     .eq('member_id', memberId)
     .order('fortnight', { ascending: true })
 
@@ -83,13 +78,15 @@ export default async function MemberDetailPage({
       social: acc.social + (r.social_fund ?? 0),
       late: acc.late + (r.late_fee ?? 0),
       absent: acc.absent + (r.absent_fee ?? 0),
+      outstanding: acc.outstanding + (r.outstanding_fee ?? 0),
     }),
-    { shares: 0, social: 0, late: 0, absent: 0 }
-  ) ?? { shares: 0, social: 0, late: 0, absent: 0 }
+    { shares: 0, social: 0, late: 0, absent: 0, outstanding: 0 }
+  ) ?? { shares: 0, social: 0, late: 0, absent: 0, outstanding: 0 }
 
   const grandTotal = totals.shares + totals.social + totals.late + totals.absent
+  const totalOutstanding = totals.outstanding
 
-  // Server Action: Add new contribution
+  // Server Action: Add contribution
   async function addContribution(formData: FormData) {
     'use server'
 
@@ -117,7 +114,6 @@ export default async function MemberDetailPage({
 
     if (error) throw new Error(error.message)
 
-    // Refresh the page after successful action
     revalidatePath(`/dashboard/admin/members/${memberId}`)
   }
 
@@ -134,7 +130,46 @@ export default async function MemberDetailPage({
 
     if (error) throw new Error(error.message)
 
-    // Refresh the page (you can get memberId from formData if needed)
+    revalidatePath(`/dashboard/admin/members/${memberId}`)
+  }
+
+  // Server Action: Add outstanding fee
+  async function addOutstandingFee(formData: FormData) {
+    'use server'
+
+    const supabase = await createSupabaseServerClient(true)
+
+    const memberId = formData.get('memberId') as string
+    const amount = Number(formData.get('amount'))
+    const reason = formData.get('reason') as string || 'Manual fee added'
+
+    if (isNaN(amount) || amount <= 0) throw new Error('Invalid amount')
+
+    const { data: latest } = await supabase
+      .from('contributions')
+      .select('id, outstanding_fee')
+      .eq('member_id', memberId)
+      .order('fortnight', { ascending: false })
+      .limit(1)
+
+    if (latest?.[0]) {
+      const newOutstanding = (latest[0].outstanding_fee ?? 0) + amount
+      await supabase
+        .from('contributions')
+        .update({
+          outstanding_fee: newOutstanding,
+          notes: `${latest[0].notes || ''}\n${reason} (+$${amount})`
+        })
+        .eq('id', latest[0].id)
+    } else {
+      await supabase.from('contributions').insert({
+        member_id: memberId,
+        fortnight: 1,
+        outstanding_fee: amount,
+        notes: reason,
+      })
+    }
+
     revalidatePath(`/dashboard/admin/members/${memberId}`)
   }
 
@@ -154,27 +189,54 @@ export default async function MemberDetailPage({
                 {authUser?.user?.email || '—'} • {member.role}
               </p>
             </div>
-            <Badge variant="outline" className="px-4 py-1 text-sm">
-              Admin View
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="px-4 py-1 text-sm">
+                Admin View
+              </Badge>
+
+              <ResetPasswordButton
+                memberId={memberId}
+                email={authUser?.user?.email || ''}
+                fullName={member.full_name}
+              />
+            </div>
           </div>
 
           <Separator className="my-6" />
 
-          {/* Summary */}
-          <Card className="bg-linear-to-br from-card to-muted/40 border-border/50 shadow-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl text-muted-foreground">
-                Total Balance
-              </CardTitle>
+          {/* Outstanding Fees Card */}
+          <Card className="border-border/50 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Outstanding Fees</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-6xl font-bold text-center md:text-left">
-                {grandTotal.toLocaleString()}
-              </p>
-              <p className="text-lg text-muted-foreground mt-2 text-center md:text-left">
-                SBD equivalent • All fortnights
-              </p>
+            <CardContent className="space-y-6">
+              <div className="flex justify-between items-center p-4 bg-muted/30 rounded-md">
+                <span className="font-medium">Current Outstanding</span>
+                <span className="text-2xl font-bold text-red-400">
+                  ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              {/* Form to add fee */}
+              <form action={addOutstandingFee} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="hidden" name="memberId" value={memberId} />
+
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount to Add (SBD)</Label>
+                  <Input name="amount" type="number" min="0.01" step="0.01" required />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Reason / Notes</Label>
+                  <Input name="reason" placeholder="e.g. Late payment penalty" />
+                </div>
+
+                <div className="md:col-span-2 flex justify-end">
+                  <Button type="submit" variant="destructive">
+                    Add to Outstanding
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
 
@@ -233,125 +295,15 @@ export default async function MemberDetailPage({
           </Card>
 
           {/* Contributions Table */}
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl">Contribution History</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead className="w-16">FN</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Shares</TableHead>
-                      <TableHead className="text-right">Social</TableHead>
-                      <TableHead className="text-right">Late</TableHead>
-                      <TableHead className="text-right">Absent</TableHead>
-                      <TableHead className="text-right">Row Total</TableHead>
-                      <TableHead className="text-right">Cumulative</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contributions?.map((row) => {
-                      const rowTotal =
-                        (row.shares ?? 0) +
-                        (row.social_fund ?? 0) +
-                        (row.late_fee ?? 0) +
-                        (row.absent_fee ?? 0)
-
-                      return (
-                        <TableRow key={row.id} className="hover:bg-muted/50 transition-colors">
-                          <TableCell className="font-medium">{row.fortnight}</TableCell>
-                          <TableCell>{row.date || '—'}</TableCell>
-                          <TableCell className="text-right">{row.shares || 0}</TableCell>
-                          <TableCell className="text-right text-emerald-400">{row.social_fund || 0}</TableCell>
-                          <TableCell className="text-right text-red-400">{row.late_fee || 0}</TableCell>
-                          <TableCell className="text-right text-red-400">{row.absent_fee || 0}</TableCell>
-                          <TableCell className="text-right font-medium">{rowTotal}</TableCell>
-                          <TableCell className="text-right font-bold text-cyan-300">
-                            {/* You'd need cumulative logic here if desired */}
-                            {rowTotal}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground max-w-xs truncate">{row.notes || '—'}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <form action={deleteContribution.bind(null, row.id)} className="inline">
-                              <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </form>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-
-                    {(!contributions || contributions.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                          No contributions yet for this member
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <MemberContributionsClient
+            memberId={memberId}
+            contributions={contributions}
+            grandTotal={grandTotal}
+            addContribution={addContribution}
+            deleteContribution={deleteContribution}
+          />
         </div>
       </div>
     </div>
   )
-}
-
-// Server Action: Add contribution
-async function addContribution(formData: FormData) {
-  'use server'
-
-  const supabase = await createSupabaseServerClient()
-
-  const memberId = formData.get('memberId') as string
-  const fortnight = Number(formData.get('fortnight'))
-  const date = formData.get('date') as string
-  const shares = Number(formData.get('shares') || 0)
-  const social_fund = Number(formData.get('social_fund') || 0)
-  const late_fee = Number(formData.get('late_fee') || 0)
-  const absent_fee = Number(formData.get('absent_fee') || 0)
-  const notes = formData.get('notes') as string
-
-  const { error } = await supabase.from('contributions').insert({
-    member_id: memberId,
-    fortnight,
-    date,
-    shares,
-    social_fund,
-    late_fee,
-    absent_fee,
-    notes,
-  })
-
-  if (error) throw new Error(error.message)
-
-  // Revalidate or redirect
-  return { success: true }
-}
-
-// Server Action: Delete contribution
-async function deleteContribution(id: string) {
-  'use server'
-
-  const supabase = await createSupabaseServerClient()
-
-  const { error } = await supabase
-    .from('contributions')
-    .delete()
-    .eq('id', id)
-
-  if (error) throw new Error(error.message)
-
-  return { success: true }
 }

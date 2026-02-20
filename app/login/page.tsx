@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -41,15 +42,19 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-gradient-to-br from-card to-muted/40 border-border/50 shadow-2xl backdrop-blur-sm">
+      <Card className="w-full max-w-md bg-linear-to-br from-card to-muted/40 border-border/50 shadow-2xl backdrop-blur-sm">
         <CardHeader className="space-y-1 pb-6">
           <div className="flex items-center justify-center mb-2">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
-              SC
-            </div>
+            <Image  
+                src="/podekia-logo.png"
+                alt="Podekia Savings Club Logo"
+                width={200}
+                height={200}
+              />
+            
           </div>
           <CardTitle className="text-2xl font-bold text-center tracking-tight">
-            Savings Club
+            Login
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
             Sign in to view your contributions
@@ -101,7 +106,7 @@ export default function LoginPage() {
                 w-full font-medium transition-all
                 ${loading
                   ? 'bg-cyan-600/50 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500'
+                  : 'bg-linear-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500'
                 }
               `}
             >

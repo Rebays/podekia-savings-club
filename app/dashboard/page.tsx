@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { AppSidebar } from '@/components/app-sidebar'
+import { ContributionsTable } from '@/components/ContributionsTable'
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient()
@@ -87,7 +88,7 @@ export default async function DashboardPage() {
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="text-center md:text-left">
                   <p className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter">
-                    {grandTotal.toLocaleString()}
+                    ${grandTotal.toLocaleString()}
                   </p>
                   <p className="text-lg text-muted-foreground mt-1">
                     SBD equivalent
@@ -97,19 +98,19 @@ export default async function DashboardPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
                   <div>
                     <p className="text-sm text-muted-foreground">Shares</p>
-                    <p className="text-2xl font-bold text-white">{totals.shares}</p>
+                    <p className="text-2xl font-bold text-black">${totals.shares}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Social Fund</p>
-                    <p className="text-2xl font-bold text-emerald-400">{totals.social}</p>
+                    <p className="text-2xl font-bold text-emerald-400">${totals.social}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Late Fees</p>
-                    <p className="text-2xl font-bold text-red-400">{totals.late}</p>
+                    <p className="text-2xl font-bold text-red-400">${totals.late}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Absent Fees</p>
-                    <p className="text-2xl font-bold text-red-400">{totals.absent}</p>
+                    <p className="text-2xl font-bold text-red-400">${totals.absent}</p>
                   </div>
                 </div>
               </div>
@@ -122,52 +123,9 @@ export default async function DashboardPage() {
               <CardTitle className="text-xl">Recent Contributions</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead className="w-16">FN</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Shares</TableHead>
-                      <TableHead className="text-right">Social</TableHead>
-                      <TableHead className="text-right">Late</TableHead>
-                      <TableHead className="text-right">Absent</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contributions?.map((row) => (
-                      <TableRow key={row.fortnight} className="hover:bg-muted/50 transition-colors">
-                        <TableCell className="font-medium">{row.fortnight}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {row.date || '—'}
-                        </TableCell>
-                        <TableCell className="text-right">{row.shares || 0}</TableCell>
-                        <TableCell className="text-right text-emerald-400">
-                          {row.social_fund || 0}
-                        </TableCell>
-                        <TableCell className="text-right text-red-400">
-                          {row.late_fee || 0}
-                        </TableCell>
-                        <TableCell className="text-right text-red-400">
-                          {row.absent_fee || 0}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground max-w-xs truncate">
-                          {row.notes || '—'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-
-                    {(!contributions || contributions.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                          No contributions recorded yet
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <CardContent className="p-0">
+                <ContributionsTable contributions={contributions} />
+              </CardContent>
             </CardContent>
           </Card>
 
