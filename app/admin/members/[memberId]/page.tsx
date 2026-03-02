@@ -76,21 +76,19 @@ export default async function MemberDetailPage({
     (acc, r) => ({
       shares: acc.shares + (r.shares ?? 0),
       social: acc.social + (r.social_fund ?? 0),
-      late: acc.late + (r.late_fee ?? 0),
-      absent: acc.absent + (r.absent_fee ?? 0),
       outstanding: acc.outstanding + (r.outstanding_fee ?? 0),
     }),
-    { shares: 0, social: 0, late: 0, absent: 0, outstanding: 0 }
-  ) ?? { shares: 0, social: 0, late: 0, absent: 0, outstanding: 0 }
+    { shares: 0, social: 0, outstanding: 0 }
+  ) ?? { shares: 0, social: 0, outstanding: 0 }
 
-  const grandTotal = totals.shares + totals.social + totals.late + totals.absent
+  const grandTotal = totals.shares + totals.social
   const totalOutstanding = totals.outstanding
 
   // Server Action: Add contribution
   async function addContribution(formData: FormData) {
     'use server'
 
-    const supabase = await createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient(true)
 
     const memberId = formData.get('memberId') as string
     const fortnight = Number(formData.get('fortnight'))
@@ -101,18 +99,46 @@ export default async function MemberDetailPage({
     const absent_fee = Number(formData.get('absent_fee') || 0)
     const notes = formData.get('notes') as string
 
-    const { error } = await supabase.from('contributions').insert({
+    // Insert the base contribution
+    const { data: newContribution, error } = await supabase.from('contributions').insert({
       member_id: memberId,
       fortnight,
       date,
       shares,
       social_fund,
-      late_fee,
-      absent_fee,
       notes,
-    })
+      late_fee, // Keep a record of the fee
+      absent_fee, // Keep a record of the fee
+    }).select().single()
 
     if (error) throw new Error(error.message)
+
+    // Add late/absent fees to outstanding balance
+    const feeTotal = late_fee + absent_fee
+    if (feeTotal > 0) {
+      const { data: latest } = await supabase
+        .from('contributions')
+        .select('id, outstanding_fee')
+        .eq('member_id', memberId)
+        .order('fortnight', { ascending: false })
+        .limit(1)
+
+      const latestContribution = latest?.[0]
+
+      if (latestContribution) {
+        const newOutstanding = (latestContribution.outstanding_fee ?? 0) + feeTotal
+        await supabase
+          .from('contributions')
+          .update({ outstanding_fee: newOutstanding })
+          .eq('id', latestContribution.id)
+      } else {
+        // This case is unlikely if we just inserted one, but as a fallback
+        await supabase
+          .from('contributions')
+          .update({ outstanding_fee: feeTotal })
+          .eq('id', newContribution.id)
+      }
+    }
 
     revalidatePath(`/dashboard/admin/members/${memberId}`)
   }

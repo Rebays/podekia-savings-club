@@ -24,13 +24,9 @@ export default async function DashboardPage() {
   // Fetch contributions
   const { data: contributions, error } = await supabase
     .from('contributions')
-    .select('fortnight, date, shares, social_fund, late_fee, absent_fee, notes')
+    .select('fortnight, date, shares, social_fund, notes, outstanding_fee')
     .eq('member_id', user.id)
     .order('fortnight', { ascending: true })
-
-  console.log('User ID:', user.id)
-  console.log('Contributions:', contributions)
-  console.log('Fetch error:', error)
 
   if (error) {
     console.error('Error fetching contributions:', error)
@@ -46,13 +42,13 @@ export default async function DashboardPage() {
     (acc, r) => ({
       shares: acc.shares + (r.shares ?? 0),
       social: acc.social + (r.social_fund ?? 0),
-      late: acc.late + (r.late_fee ?? 0),
-      absent: acc.absent + (r.absent_fee ?? 0),
+      outstanding: acc.outstanding + (r.outstanding_fee ?? 0),
     }),
-    { shares: 0, social: 0, late: 0, absent: 0 }
-  ) ?? { shares: 0, social: 0, late: 0, absent: 0 }
+    { shares: 0, social: 0, outstanding: 0 }
+  ) ?? { shares: 0, social: 0, outstanding: 0 }
 
-  const grandTotal = totals.shares + totals.social + totals.late + totals.absent
+  const grandTotal = totals.shares + totals.social
+  const totalOutstanding = totals.outstanding
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -95,7 +91,7 @@ export default async function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center">
                   <div>
                     <p className="text-sm text-muted-foreground">Shares</p>
                     <p className="text-2xl font-bold text-black">${totals.shares}</p>
@@ -105,12 +101,8 @@ export default async function DashboardPage() {
                     <p className="text-2xl font-bold text-emerald-400">${totals.social}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Late Fees</p>
-                    <p className="text-2xl font-bold text-red-400">${totals.late}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Absent Fees</p>
-                    <p className="text-2xl font-bold text-red-400">${totals.absent}</p>
+                    <p className="text-sm text-muted-foreground">Outstanding</p>
+                    <p className="text-2xl font-bold text-red-400">${totalOutstanding}</p>
                   </div>
                 </div>
               </div>

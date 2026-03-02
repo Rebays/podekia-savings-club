@@ -36,22 +36,31 @@ export default async function SettlementsPage() {
     return <div className="p-8 text-red-500 text-center">Access Denied</div>
   }
 
-  // Get members + their current outstanding
-  const { data: members } = await supabase
-    .from('profiles')
-    .select(`
-      id,
-      full_name,
-      contributions!inner (outstanding_fee)
-    `)
-    .order('full_name')
+      // Get members + their current outstanding
 
-  // Flatten and sum outstanding per member
+      const { data: members } = await supabase
+
+        .from('profiles')
+
+        .select(`
+
+          id,
+
+          full_name,
+
+          contributions (outstanding_fee)
+
+        `)
+
+        .order('full_name')
+    
+      // Flatten and sum outstanding per member
   const memberData = members?.map(m => ({
     id: m.id,
     full_name: m.full_name || '—',
     outstanding: m.contributions?.reduce((sum, c) => sum + (c.outstanding_fee ?? 0), 0) || 0
   })) ?? []
+  
 
   // Server Action: Record settlement
   async function settlePayment(formData: FormData) {
@@ -80,24 +89,29 @@ export default async function SettlementsPage() {
 
     if (paymentError) throw paymentError
 
-    // 2. Reduce outstanding in contributions (find latest or first)
+    // 2. Reduce outstanding and increase social fund
     const { data: latestContrib } = await supabaseAdmin
       .from('contributions')
-      .select('id, outstanding_fee')
+      .select('id, outstanding_fee, social_fund')
       .eq('member_id', memberId)
       .order('fortnight', { ascending: false })
       .limit(1)
 
     if (latestContrib?.[0]) {
       const newOutstanding = Math.max(0, (latestContrib[0].outstanding_fee ?? 0) - amount)
+      const newSocialFund = (latestContrib[0].social_fund ?? 0) + amount
 
       await supabaseAdmin
         .from('contributions')
-        .update({ outstanding_fee: newOutstanding })
+        .update({
+          outstanding_fee: newOutstanding,
+          social_fund: newSocialFund,
+        })
         .eq('id', latestContrib[0].id)
     }
 
     revalidatePath('/dashboard/admin/settlements')
+    revalidatePath(`/dashboard/admin/members/${memberId}`) // Also revalidate member page
   }
 
   return (

@@ -18,16 +18,14 @@ interface MemberContribution {
   full_name: string | null
   shares: number
   social_fund: number
-  late_fee: number
-  absent_fee: number
+  outstanding: number
   total: number
 }
 
 interface GrandTotals {
   shares: number
   social_fund: number
-  late_fee: number
-  absent_fee: number
+  outstanding: number
   total: number
 }
 
@@ -42,19 +40,18 @@ export function ContributionsOverviewTable({ members, grandTotals }: Props) {
   const csvContent = useMemo(() => {
     if (!hasData) return ""
 
-    const headers = ["Member Name", "Shares", "Social Fund", "Late Fee", "Absent Fee", "Total"]
+    const headers = ["Member Name", "Shares", "Social Fund", "Outstanding", "Total"]
 
     const rows = members.map(m => [
       `"${(m.full_name || "Unknown").replace(/"/g, '""')}"`,
       m.shares,
       m.social_fund,
-      m.late_fee,
-      m.absent_fee,
+      m.outstanding,
       m.total,
     ])
 
     // Add grand totals row
-    const grandRow = ["GRAND TOTAL", grandTotals.shares, grandTotals.social_fund, grandTotals.late_fee, grandTotals.absent_fee, grandTotals.total]
+    const grandRow = ["GRAND TOTAL", grandTotals.shares, grandTotals.social_fund, grandTotals.outstanding, grandTotals.total]
 
     return [headers, ...rows, grandRow]
       .map(row => row.join(","))
@@ -98,8 +95,7 @@ export function ContributionsOverviewTable({ members, grandTotals }: Props) {
               <TableHead>Name</TableHead>
               <TableHead className="text-right">Shares</TableHead>
               <TableHead className="text-right">Social Fund</TableHead>
-              <TableHead className="text-right">Late Fee</TableHead>
-              <TableHead className="text-right">Absent Fee</TableHead>
+              <TableHead className="text-right">Outstanding</TableHead>
               <TableHead className="text-right font-semibold">Total</TableHead>
             </TableRow>
           </TableHeader>
@@ -112,10 +108,7 @@ export function ContributionsOverviewTable({ members, grandTotals }: Props) {
                   {m.social_fund.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right text-red-400">
-                  {m.late_fee.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right text-red-400">
-                  {m.absent_fee.toLocaleString()}
+                  {m.outstanding.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right font-bold">
                   {m.total.toLocaleString()}
@@ -125,7 +118,7 @@ export function ContributionsOverviewTable({ members, grandTotals }: Props) {
 
             {members.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                   No members or contributions yet
                 </TableCell>
               </TableRow>
@@ -139,10 +132,7 @@ export function ContributionsOverviewTable({ members, grandTotals }: Props) {
                 {grandTotals.social_fund.toLocaleString()}
               </TableCell>
               <TableCell className="text-right font-bold text-red-400">
-                {grandTotals.late_fee.toLocaleString()}
-              </TableCell>
-              <TableCell className="text-right font-bold text-red-400">
-                {grandTotals.absent_fee.toLocaleString()}
+                {grandTotals.outstanding.toLocaleString()}
               </TableCell>
               <TableCell className="text-right font-bold text-cyan-300">
                 {grandTotals.total.toLocaleString()}

@@ -50,32 +50,30 @@ export default async function AdminContributionsOverview() {
   // Fetch contributions grouped by member with per-field totals
   const { data: contributions } = await supabase
     .from('contributions')
-    .select('member_id, shares, social_fund, late_fee, absent_fee')
+    .select('member_id, shares, social_fund, outstanding_fee')
 
   // Calculate per-member totals
   const memberBalances: Record<string, {
     shares: number
     social_fund: number
-    late_fee: number
-    absent_fee: number
+    outstanding: number
     total: number
   }> = {}
 
   contributions?.forEach(row => {
     if (!memberBalances[row.member_id]) {
-      memberBalances[row.member_id] = { shares: 0, social_fund: 0, late_fee: 0, absent_fee: 0, total: 0 }
+      memberBalances[row.member_id] = { shares: 0, social_fund: 0, outstanding: 0, total: 0 }
     }
     memberBalances[row.member_id].shares += row.shares ?? 0
     memberBalances[row.member_id].social_fund += row.social_fund ?? 0
-    memberBalances[row.member_id].late_fee += row.late_fee ?? 0
-    memberBalances[row.member_id].absent_fee += row.absent_fee ?? 0
+    memberBalances[row.member_id].outstanding += row.outstanding_fee ?? 0
     memberBalances[row.member_id].total +=
-      (row.shares ?? 0) + (row.social_fund ?? 0) + (row.late_fee ?? 0) + (row.absent_fee ?? 0)
+      (row.shares ?? 0) + (row.social_fund ?? 0)
   })
 
   // Combine profiles with balances
   const members = profiles?.map(p => {
-    const balance = memberBalances[p.id] || { shares: 0, social_fund: 0, late_fee: 0, absent_fee: 0, total: 0 }
+    const balance = memberBalances[p.id] || { shares: 0, social_fund: 0, outstanding: 0, total: 0 }
     return {
       ...p,
       ...balance,
@@ -87,11 +85,10 @@ export default async function AdminContributionsOverview() {
     (acc, m) => ({
       shares: acc.shares + m.shares,
       social_fund: acc.social_fund + m.social_fund,
-      late_fee: acc.late_fee + m.late_fee,
-      absent_fee: acc.absent_fee + m.absent_fee,
+      outstanding: acc.outstanding + m.outstanding,
       total: acc.total + m.total,
     }),
-    { shares: 0, social_fund: 0, late_fee: 0, absent_fee: 0, total: 0 }
+    { shares: 0, social_fund: 0, outstanding: 0, total: 0 }
   )
 
   return (

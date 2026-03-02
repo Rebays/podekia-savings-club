@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AppSidebar } from '@/components/app-sidebar'
+import { Trash2 } from 'lucide-react'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 export default async function ContributionSheetsPage() {
   const supabase = await createSupabaseServerClient(true)
@@ -73,6 +75,37 @@ export default async function ContributionSheetsPage() {
       })
 
     if (error) throw error
+
+    revalidatePath('/dashboard/admin/contribution-sheets')
+  }
+
+  // Server Action: Delete sheet
+  async function deleteSheet(formData: FormData) {
+    'use server'
+
+    const supabaseAdmin = await createSupabaseServerClient(true)
+    const sheetId = formData.get('sheetId') as string
+    const sheetUrl = formData.get('sheetUrl') as string
+
+    if (!sheetId || !sheetUrl) throw new Error('Missing sheet information')
+
+    // 1. Delete from Storage
+    const fileName = sheetUrl.split('/').pop()
+    if (fileName) {
+      const { error: storageError } = await supabaseAdmin.storage
+        .from('contribution-sheets')
+        .remove([fileName])
+
+      if (storageError) console.error(`Storage delete failed (might be ok if file was already gone):`, storageError.message)
+    }
+
+    // 2. Delete from DB
+    const { error: dbError } = await supabaseAdmin
+      .from('fortnightly_contribution_sheets')
+      .delete()
+      .eq('id', sheetId)
+
+    if (dbError) throw new Error(dbError.message)
 
     revalidatePath('/dashboard/admin/contribution-sheets')
   }
@@ -149,11 +182,37 @@ export default async function ContributionSheetsPage() {
                           </p>
                         )}
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={sheet.signed_sheet_url} target="_blank" rel="noopener noreferrer">
-                          View Sheet
-                        </a>
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={sheet.signed_sheet_url} target="_blank" rel="noopener noreferrer">
+                            View Sheet
+                          </a>
+                        </Button>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the sheet for Fortnight {sheet.fortnight}. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <form action={deleteSheet}>
+                                <input type="hidden" name="sheetId" value={sheet.id} />
+                                <input type="hidden" name="sheetUrl" value={sheet.signed_sheet_url} />
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                              </form>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </div>
                 ))}

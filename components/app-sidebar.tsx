@@ -61,7 +61,7 @@ const navGroups: NavGroup[] = [
     title: "Club Records",
     items: [
       { title: "Contributions", href: "/admin/contributions-overview", icon: BookOpen, adminOnly: false },
-      // { title: "Settlements", href: "/dashboard/admin/settlements", icon: DollarSign, adminOnly: true },
+       { title: "Settlements", href: "/dashboard/admin/settlements", icon: DollarSign, adminOnly: true },
       { title: "Contribution Sheets", href: "/dashboard/admin/contribution-sheets", icon: UploadCloud, adminOnly: true },
     ],
     adminOnly: false,

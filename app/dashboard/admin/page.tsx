@@ -38,25 +38,25 @@ export default async function AdminDashboard() {
 
   const { data: contributions } = await supabase
     .from('contributions')
-    .select('shares, social_fund, late_fee, absent_fee, fortnight')
+    .select('shares, social_fund, outstanding_fee, fortnight')
 
   const totals = contributions?.reduce(
     (acc, r) => ({
       shares: acc.shares + (r.shares ?? 0),
       social: acc.social + (r.social_fund ?? 0),
-      late: acc.late + (r.late_fee ?? 0),
-      absent: acc.absent + (r.absent_fee ?? 0),
+      outstanding: acc.outstanding + (r.outstanding_fee ?? 0),
     }),
-    { shares: 0, social: 0, late: 0, absent: 0 }
-  ) ?? { shares: 0, social: 0, late: 0, absent: 0 }
+    { shares: 0, social: 0, outstanding: 0 }
+  ) ?? { shares: 0, social: 0, outstanding: 0 }
 
-  const grandTotal = totals.shares + totals.social + totals.late + totals.absent
+  const grandTotal = totals.shares + totals.social
+  const totalOutstanding = totals.outstanding
 
   // Prepare chart data on server
   const fortnights = Array.from({ length: 23 }, (_, i) => i + 1)
   const chartData = fortnights.map(fn => {
     const contrib = contributions?.filter(c => c.fortnight === fn) || []
-    const total = contrib.reduce((sum, c) => sum + (c.shares ?? 0) + (c.social_fund ?? 0) + (c.late_fee ?? 0) + (c.absent_fee ?? 0), 0)
+    const total = contrib.reduce((sum, c) => sum + (c.shares ?? 0) + (c.social_fund ?? 0), 0)
     return { fortnight: `FN ${fn}`, total }
   })
 
@@ -126,19 +126,19 @@ export default async function AdminDashboard() {
               </CardContent>
             </Card>
 
-            {/* Late Fee Percentage */}
+            {/* Total Outstanding Card */}
             <Card className="bg-linear-to-br from-card to-muted/40 border-border/50 shadow-xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-orange-400" />
-                  Late Fee %
+                  Total Outstanding
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-orange-400">
-                  {grandTotal > 0 ? ((totals.late / grandTotal) * 100).toFixed(1) : 0}%
+                  ${totalOutstanding.toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Of total contributions</p>
+                <p className="text-xs text-muted-foreground mt-1">Unsettled fees club-wide</p>
               </CardContent>
             </Card>
 

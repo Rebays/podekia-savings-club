@@ -29,6 +29,7 @@ interface Contribution {
     social_fund: number | null
     late_fee: number | null
     absent_fee: number | null
+    outstanding_fee: number | null
     notes: string | null
 }
 
@@ -171,6 +172,7 @@ export function MemberContributionsClient({
                                     <TableHead className="text-right">Social</TableHead>
                                     <TableHead className="text-right">Late</TableHead>
                                     <TableHead className="text-right">Absent</TableHead>
+                                    <TableHead className="text-right">Outstanding</TableHead>
                                     <TableHead className="text-right">Row Total</TableHead>
                                     <TableHead className="text-right">Cumulative</TableHead>
                                     <TableHead>Notes</TableHead>
@@ -178,64 +180,67 @@ export function MemberContributionsClient({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {contributions?.map((row) => {
-                                    const rowTotal =
-                                        (row.shares ?? 0) +
-                                        (row.social_fund ?? 0) +
-                                        (row.late_fee ?? 0) +
-                                        (row.absent_fee ?? 0)
+                                {(() => {
+                                    let cumulativeTotal = 0
+                                    return contributions?.map((row) => {
+                                        const rowTotal =
+                                            (row.shares ?? 0) +
+                                            (row.social_fund ?? 0)
+                                        cumulativeTotal += rowTotal
 
-                                    return (
-                                        <TableRow key={row.id} className="hover:bg-muted/50 transition-colors">
-                                            <TableCell className="font-medium">{row.fortnight}</TableCell>
-                                            <TableCell>{row.date || '—'}</TableCell>
-                                            <TableCell className="text-right">{row.shares || 0}</TableCell>
-                                            <TableCell className="text-right text-emerald-400">{row.social_fund || 0}</TableCell>
-                                            <TableCell className="text-right text-red-400">{row.late_fee || 0}</TableCell>
-                                            <TableCell className="text-right text-red-400">{row.absent_fee || 0}</TableCell>
-                                            <TableCell className="text-right font-medium">{rowTotal}</TableCell>
-                                            <TableCell className="text-right font-bold text-cyan-300">
-                                                {rowTotal} {/* Placeholder */}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground max-w-xs truncate">{row.notes || '—'}</TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                {/* <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button> */}
-                                                {/* Delete Confirmation Modal */}
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete Contribution</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Are you sure you want to delete this contribution for fortnight {row.fortnight}?
-                                                                This action cannot be undone.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                onClick={() => handleDelete(row.id)}
-                                                                className="bg-red-600 hover:bg-red-700"
-                                                            >
-                                                                Delete
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
+                                        return (
+                                            <TableRow key={row.id} className="hover:bg-muted/50 transition-colors">
+                                                <TableCell className="font-medium">{row.fortnight}</TableCell>
+                                                <TableCell>{row.date || '—'}</TableCell>
+                                                <TableCell className="text-right">{row.shares || 0}</TableCell>
+                                                <TableCell className="text-right text-emerald-400">{row.social_fund || 0}</TableCell>
+                                                <TableCell className="text-right text-red-400">{row.late_fee || 0}</TableCell>
+                                                <TableCell className="text-right text-red-400">{row.absent_fee || 0}</TableCell>
+                                                <TableCell className="text-right text-red-400">{row.outstanding_fee || 0}</TableCell>
+                                                <TableCell className="text-right font-medium">{rowTotal}</TableCell>
+                                                <TableCell className="text-right font-bold text-cyan-300">
+                                                    {cumulativeTotal}
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground max-w-xs truncate">{row.notes || '—'}</TableCell>
+                                                <TableCell className="text-right space-x-2">
+                                                    {/* <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                            </Button> */}
+                                                    {/* Delete Confirmation Modal */}
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-500">
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete Contribution</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you want to delete this contribution for fortnight {row.fortnight}?
+                                                                    This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => handleDelete(row.id)}
+                                                                    className="bg-red-600 hover:bg-red-700"
+                                                                >
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                })()}
 
                                 {(!contributions || contributions.length === 0) && (
                                     <TableRow>
-                                        <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                                        <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
                                             No contributions yet for this member
                                         </TableCell>
                                     </TableRow>
